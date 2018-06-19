@@ -1,7 +1,9 @@
 package com.lanpin.qrcode.utils;
 
+import com.lanpin.qrcode.adapter.MyQRCodeImage;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.swetake.util.Qrcode;
+import jp.sourceforge.qrcode.QRCodeDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,14 +15,15 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 二维码工具类
  */
-public class CreateQRCode {
-    public static Logger logger = LoggerFactory.getLogger(CreateQRCode.class);
+public class QRCodeUtil {
+    public static Logger logger = LoggerFactory.getLogger(QRCodeUtil.class);
 
     /**
      * 使用QRCode生成二维码
@@ -31,7 +34,7 @@ public class CreateQRCode {
     public static Object CreateQRCode(String content, HttpServletRequest request,HttpServletResponse response){
         Map<String, Object> map = new HashMap<>(5);
         try{
-            logger.info("CreateQRCode()开始生成二维码：" + content);
+            logger.info("QRCodeUtil()开始生成二维码：" + content);
             //计算二维码图片的高宽比，API文档规定计算图片宽高的方式，v是本次测试的版本号，公式 67+12*(版本号-1)
             int v =6;
             int width = 67 + 12 * (v - 1);
@@ -96,10 +99,10 @@ public class CreateQRCode {
 
             //将图片写入图片流
             ImageIO.write(bufferedImage, "jpg", imageOutputStream);
-//            ImageIO.write(bufferedImage, "jpg", response.getOutputStream());
+            ImageIO.write(bufferedImage, "jpg", response.getOutputStream());
             //将图片转化成base64，web显示
             String base64 = Base64.encode(outputStream.toByteArray());
-            logger.info("CreateQRCode()生成二维码成功：" + base64);
+            logger.info("QRCodeUtil()生成二维码成功：" + base64);
             map.put("success", "0000");
             map.put("imageBase64", base64);
         }catch (Exception e){
@@ -108,9 +111,25 @@ public class CreateQRCode {
         }
         return map;
     }
+
+    public static String readQRCode(String filePath){
+        String result = null;
+        //图片路径
+        File file = new File(filePath);
+        //读取图片到缓冲区
+        try {
+            BufferedImage bufferedImage = ImageIO.read(file);
+            //QRCode解码器
+            QRCodeDecoder codeDecoder = new QRCodeDecoder();
+            //实现QRCodeImage接口,解析二维码获得信息
+            result = new String(codeDecoder.decode(new MyQRCodeImage(bufferedImage)), "utf-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
 }
-
-
 
 
 
